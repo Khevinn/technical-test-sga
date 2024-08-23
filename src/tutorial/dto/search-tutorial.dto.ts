@@ -1,13 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumberString, IsOptional, IsString } from 'class-validator';
 
 export class SearchTutorialDto {
-  @IsString()
+  @IsNumberString()
   @IsOptional()
   @ApiProperty()
   pageSize?: number;
 
-  @IsString()
+  @IsNumberString()
   @IsOptional()
   @ApiProperty()
   pageNumber?: number;
@@ -15,22 +15,12 @@ export class SearchTutorialDto {
   @IsString()
   @IsOptional()
   @ApiProperty()
-  startDate?: string;
+  createdAt?: string;
 
   @IsString()
   @IsOptional()
   @ApiProperty()
-  startUpdatedDate?: string;
-
-  @IsString()
-  @IsOptional()
-  @ApiProperty()
-  endUpdatedDate?: string;
-
-  @IsString()
-  @IsOptional()
-  @ApiProperty()
-  endDate?: string;
+  updatedAt?: string;
 
   @IsString()
   @IsOptional()

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class CreateTutorialDto {
   @IsString()
@@ -8,6 +8,5 @@ export class CreateTutorialDto {
 
   @IsString()
   @ApiProperty()
-  @IsOptional()
-  content?: string;
+  content: string;
 }

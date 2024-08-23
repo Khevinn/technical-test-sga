@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateTutorialDto {
   @ApiProperty()
@@ -11,14 +11,4 @@ export class UpdateTutorialDto {
   @IsOptional()
   @IsString()
   content?: string;
-
-  @ApiProperty()
-  @IsOptional()
-  @IsDateString()
-  createdAt?: string;
-
-  @ApiProperty()
-  @IsOptional()
-  @IsDateString()
-  updatedAt?: string;
 }
