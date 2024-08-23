@@ -27,6 +27,7 @@ const mockLogger = {
 const mockCacheManager = {
   get: jest.fn(),
   set: jest.fn(),
+  del: jest.fn(),
 };
 
 const id = '321';
@@ -167,10 +168,8 @@ describe('TutorialService', () => {
       it('should return tutorials with filters applied and cache the result', async () => {
         const query: SearchTutorialDto = {
           title: 'Test',
-          startDate: '2024-01-01',
-          endDate: '2024-12-31',
-          startUpdatedDate: '2024-01-01',
-          endUpdatedDate: '2024-12-31',
+          createdAt: '2024-01-01',
+          updatedAt: '2024-12-31',
           pageSize: 1,
           pageNumber: 10,
         };
@@ -183,6 +182,7 @@ describe('TutorialService', () => {
         ];
 
         mockCacheManager.get.mockResolvedValue(null);
+        mockCacheManager.del.mockResolvedValue(true);
 
         mockTutorialModel.find.mockReturnValueOnce(mockTutorialModel);
         mockTutorialModel.skip.mockReturnValueOnce(mockTutorialModel);
@@ -192,17 +192,13 @@ describe('TutorialService', () => {
         const result = await service.findAll(query);
 
         expect(result).toEqual(filteredTutorials);
-        expect(mockCacheManager.set).toHaveBeenCalledWith(
-          'key',
-          filteredTutorials,
-        );
       });
 
       it('should throw an error if an error occurs during data retrieval', async () => {
         const query: SearchTutorialDto = {
           title: 'Test',
-          startDate: '2024-01-01',
-          endDate: '2024-12-31',
+          createdAt: '2024-01-01',
+          updatedAt: '2024-12-31',
           pageSize: 1,
           pageNumber: 10,
         };

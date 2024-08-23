@@ -29,7 +29,11 @@
 ## Project setup
 
 ```bash
+# run with docker
+$ docker-compose up -d --build
+
 $ npm install
+
 ```
 
 ## Compile and run the project
@@ -43,9 +47,6 @@ $ npm run dev
 
 # production mode
 $ npm run start:prod
-
-# run with docker
-$ docker-compose up -d --build
 ```
 
 ## Run tests

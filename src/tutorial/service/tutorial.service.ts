@@ -71,12 +71,15 @@ export class TutorialService {
     try {
       const { pageSize = 1, pageNumber = 10 } = query;
 
-      const tutorialsCache: Tutorial[] = await this.cacheManager.get('key');
-      if (tutorialsCache) {
-        return tutorialsCache;
-      }
-
       const filters = this.buildFilters(query);
+      const hasFilters = Object.keys(filters).length > 0;
+
+      if (!hasFilters) {
+        const tutorialsCache: Tutorial[] = await this.cacheManager.get('key');
+        if (tutorialsCache) {
+          return tutorialsCache;
+        }
+      }
 
       const tutorials = await this.tutorialModel
         .find(filters)
@@ -84,7 +87,11 @@ export class TutorialService {
         .limit(Number(pageNumber))
         .exec();
 
-      await this.cacheManager.set('key', tutorials);
+      if (hasFilters) {
+        await this.cacheManager.del('key');
+      } else {
+        await this.cacheManager.set('key', tutorials);
+      }
 
       return tutorials;
     } catch (error) {
@@ -141,26 +148,28 @@ export class TutorialService {
   }
 
   //Pontos de melhoria, outra abordagem para remover esses ifs aninhados
-  buildFilters(query: SearchTutorialDto): any {
-    const { title, startDate, endDate, startUpdatedDate, endUpdatedDate } =
-      query;
-
+  buildFilters(query: SearchTutorialDto) {
+    const { title, createdAt, updatedAt } = query;
     const filters: any = {};
 
     if (title) {
       filters.title = { $regex: title, $options: 'i' };
     }
 
-    if (startDate || endDate) {
-      filters.createdAt = {};
-      if (startDate) filters.createdAt.$gte = new Date(startDate);
-      if (endDate) filters.createdAt.$lte = new Date(endDate);
+    if (createdAt) {
+      const startOfDay = new Date(createdAt);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const endOfDay = new Date(createdAt);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+      filters.createdAt = { $gte: startOfDay, $lte: endOfDay };
     }
 
-    if (startUpdatedDate || endUpdatedDate) {
-      filters.updatedAt = {};
-      if (startUpdatedDate) filters.updatedAt.$gte = new Date(startUpdatedDate);
-      if (endUpdatedDate) filters.updatedAt.$lte = new Date(endUpdatedDate);
+    if (updatedAt) {
+      const startOfDay = new Date(updatedAt);
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const endOfDay = new Date(updatedAt);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+      filters.updatedAt = { $gte: startOfDay, $lte: endOfDay };
     }
 
     return filters;
