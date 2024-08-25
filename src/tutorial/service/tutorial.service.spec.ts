@@ -1,5 +1,10 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateTutorialDto } from '../dto/create-tutorial.dto';
@@ -83,7 +88,7 @@ describe('TutorialService', () => {
       jest.spyOn(tutorialModel, 'findOne').mockResolvedValue(existingTutorial);
 
       await expect(service.create(createTutorialDto)).rejects.toThrow(
-        InternalServerErrorException,
+        ConflictException,
       );
       expect(tutorialModel.findOne).toHaveBeenCalledWith({
         title: createTutorialDto.title,
@@ -129,9 +134,7 @@ describe('TutorialService', () => {
       it('should throw a error if tutorial not found', async () => {
         mockTutorialModel.findById.mockResolvedValue(null);
 
-        await expect(service.findOne(id)).rejects.toThrow(
-          InternalServerErrorException,
-        );
+        await expect(service.findOne(id)).rejects.toThrow(NotFoundException);
         expect(mockTutorialModel.findById).toHaveBeenCalledWith(id);
       });
 
@@ -149,6 +152,8 @@ describe('TutorialService', () => {
 
     describe('findAll', () => {
       it('should return tutorials from cache if available', async () => {
+        const query = {};
+        const cacheKey = `tutorials:${JSON.stringify(query)}`;
         const cachedTutorials: Tutorial[] = [
           {
             title: 'Cached Tutorial',
@@ -161,7 +166,7 @@ describe('TutorialService', () => {
         const result = await service.findAll({});
 
         expect(result).toEqual(cachedTutorials);
-        expect(mockCacheManager.get).toHaveBeenCalledWith('key');
+        expect(mockCacheManager.get).toHaveBeenCalledWith(cacheKey);
         expect(mockTutorialModel.find).not.toHaveBeenCalled();
       });
 
@@ -247,7 +252,7 @@ describe('TutorialService', () => {
         mockTutorialModel.findByIdAndUpdate.mockResolvedValue(null);
 
         await expect(service.update(id, updateDto)).rejects.toThrow(
-          InternalServerErrorException,
+          NotFoundException,
         );
       });
     });

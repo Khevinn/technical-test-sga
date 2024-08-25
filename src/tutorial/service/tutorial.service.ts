@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Tutorial } from '../schemas/tutorial.schema';
@@ -35,10 +35,14 @@ export class TutorialService {
 
       const createdTutorial =
         await this.tutorialModel.create(createTutorialDto);
+
       return createdTutorial;
     } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
       this.logger.error({
-        message: error,
+        message: `Failed to create tutorial with title: ${createTutorialDto.title}`,
         error,
         context: this.create.name,
       });
@@ -51,13 +55,18 @@ export class TutorialService {
   async findOne(id: string): Promise<Tutorial> {
     try {
       const tutorial = await this.tutorialModel.findById(id);
+
       if (!tutorial) {
         throw new NotFoundException('Tutorial not found');
       }
+
       return tutorial;
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       this.logger.error({
-        message: error,
+        message: `Failed to retrieve tutorial with ID: ${id}.`,
         error,
         context: this.create.name,
       });
@@ -69,13 +78,14 @@ export class TutorialService {
 
   async findAll(query: SearchTutorialDto): Promise<Tutorial[]> {
     try {
-      const { pageSize = 1, pageNumber = 10 } = query;
-
+      const { pageSize = 10, pageNumber = 1 } = query;
       const filters = this.buildFilters(query);
       const hasFilters = Object.keys(filters).length > 0;
+      const cacheKey = `tutorials:${JSON.stringify(query)}`;
 
       if (!hasFilters) {
-        const tutorialsCache: Tutorial[] = await this.cacheManager.get('key');
+        const tutorialsCache: Tutorial[] =
+          await this.cacheManager.get(cacheKey);
         if (tutorialsCache) {
           return tutorialsCache;
         }
@@ -83,20 +93,16 @@ export class TutorialService {
 
       const tutorials = await this.tutorialModel
         .find(filters)
-        .skip((pageSize - 1) * pageNumber)
-        .limit(Number(pageNumber))
+        .skip((pageNumber - 1) * pageSize)
+        .limit(pageSize)
         .exec();
 
-      if (hasFilters) {
-        await this.cacheManager.del('key');
-      } else {
-        await this.cacheManager.set('key', tutorials);
-      }
+      await this.handleCache(hasFilters, tutorials, cacheKey);
 
       return tutorials;
     } catch (error) {
       this.logger.error({
-        message: error,
+        message: `Failed to retrieve tutorials with query: ${JSON.stringify(query)}`,
         error,
         context: this.findAll.name,
       });
@@ -121,8 +127,11 @@ export class TutorialService {
 
       return updatedTutorial;
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       this.logger.error({
-        message: error,
+        message: `Failed to update tutorial with ID: ${id}.`,
         error,
         context: this.update.name,
       });
@@ -138,8 +147,11 @@ export class TutorialService {
         throw new NotFoundException('Tutorial not found');
       }
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       this.logger.error({
-        message: error,
+        message: `Failed to remove tutorial with ID: ${id}.`,
         error,
         context: this.remove.name,
       });
@@ -147,10 +159,9 @@ export class TutorialService {
     }
   }
 
-  //Pontos de melhoria, outra abordagem para remover esses ifs aninhados
-  buildFilters(query: SearchTutorialDto) {
+  private buildFilters(query: SearchTutorialDto) {
     const { title, createdAt, updatedAt } = query;
-    const filters: any = {};
+    const filters: FilterQuery<Tutorial> = {};
 
     if (title) {
       filters.title = { $regex: title, $options: 'i' };
@@ -173,5 +184,21 @@ export class TutorialService {
     }
 
     return filters;
+  }
+
+  private async handleCache(
+    hasFilters: boolean,
+    tutorials: Tutorial[],
+    cacheKey: string,
+  ): Promise<void> {
+    try {
+      if (hasFilters) {
+        await this.cacheManager.del(cacheKey);
+      } else {
+        await this.cacheManager.set(cacheKey, tutorials);
+      }
+    } catch (error) {
+      this.logger.error('Failed to handle cache', error);
+    }
   }
 }

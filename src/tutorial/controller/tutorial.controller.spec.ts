@@ -72,7 +72,7 @@ describe('TutorialController', () => {
   });
 
   it('should return a list of tutorials', async () => {
-    const query = { limit: 10 };
+    const query = {};
     const result = [
       { id: '1', title: 'Tutorial 1', content: 'Content 1' },
       { id: '2', title: 'Tutorial 2', content: 'Content 2' },
