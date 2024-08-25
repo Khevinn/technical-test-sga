@@ -14,6 +14,7 @@ import { UpdateTutorialDto } from '../dto/update-tutorial.dto';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { TutorialService } from '../service/tutorial.service';
 import { ApiTags } from '@nestjs/swagger';
+import { SearchTutorialDto } from '../dto/search-tutorial.dto';
 
 @ApiTags('tutorial')
 @Controller('tutorial')
@@ -31,7 +32,7 @@ export class TutorialController {
 
   @UseInterceptors(CacheInterceptor)
   @Get()
-  async findAll(@Query() query: any) {
+  async findAll(@Query() query: SearchTutorialDto) {
     return this.tutorialService.findAll(query);
   }
 

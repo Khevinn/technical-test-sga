@@ -10,8 +10,8 @@ export class LoginDto {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  @MinLength(6, {
-    message: 'Password is too short. Minimum length is 6 characters',
+  @MinLength(8, {
+    message: 'Password is too short. Minimum length is 8 characters',
   })
   password: string;
 }
