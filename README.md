@@ -32,6 +32,7 @@
 # run with docker
 $ docker-compose up -d --build
 
+# run with node without docker
 $ npm install
 
 ```
@@ -46,7 +47,7 @@ $ npm run start
 $ npm run dev
 
 # production mode
-$ npm run start:prod
+$ npm run prod
 ```
 
 ## Run tests
